@@ -1,7 +1,10 @@
 import { useState } from 'react'
+import { useEffect} from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+
+
 
 export default function App() {
   const [tasks, setTasks] = useState([])
@@ -11,6 +14,12 @@ export default function App() {
   const [completed, setCompleted] = useState([])
   const [editIndex, setEditIndex] = useState(null)
   const [rename, setRename] = useState("")
+
+  useEffect(() => {
+    fetch('http://localhost:5000/todos')
+        .then(res => res.json())
+        .then(data => setTasks(data))
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-700 flex items-center justify-center">
@@ -47,7 +56,7 @@ export default function App() {
             <ul>
               {tasks.map((task, index) => (
                 <li key={index} style={{ maxWidth: 200, wordWrap: "break-word" }}>
-                  {task} 
+                  {task.title} 
                   {editIndex === index ? (
                     <>
                       <Input 
@@ -70,7 +79,7 @@ export default function App() {
           <div style={{ border: "1px solid gray", padding: 10, borderRadius: 8 }}>
             <h3 style={{ textDecoration: "underline" }}>completed tasks</h3>
             <ul>
-              {completed.map((completed, index) => (<li key={index}>{completed}</li>))}
+              {completed.map((completed, index) => (<li key={index}>{completed.title}</li>))}
             </ul>
           </div>
         </div>
@@ -83,29 +92,32 @@ export default function App() {
     setCalled(true)
     if (input.trim() === "") {
       setError(true)
-      return;
-    } else {
-      setError(false)
-      setTasks((now) => [...now, input])
-      console.log(tasks)
-      setInput("")
-      return(
-        console.log(input)
-      );
+      return
     }
+    setError(false)
+    fetch('http://localhost:5000/todos', {method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: input })})
+      .then(res => res.json())
+      .then(newTodo => setTasks((now) => [...now, newTodo]))
+    setInput("")
   }
 
   function DeleteTask(index) {
+    const id = tasks[index].id
+    fetch(`http://localhost:5000/todos/${id}`, { method: 'DELETE' })
+      .then(res => res.json())
+      .then(updatedTodos => setTasks(updatedTodos))
     setCompleted((now) => [...now, tasks[index]])
-    setTasks((now) => now.filter((_, i) => i !== index))
+  }
+
+  function ConfirmRename() {
+    const id = tasks[editIndex].id
+    fetch(`http://localhost:5000/todos/${id}`, {method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: rename })})
+      .then(res => res.json())
+      .then(updatedTodos => setTasks(updatedTodos))
+    setEditIndex(null)
   }
 
   function StartRename(index) {
     setEditIndex(index)
-  }
-
-  function ConfirmRename() {
-    setTasks((now) => now.map((task, i) => i === editIndex ? rename : task))
-    setEditIndex(null)
   }
 }
