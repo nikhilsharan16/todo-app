@@ -104,16 +104,20 @@ export default function App() {
   function DeleteTask(index) {
     const id = tasks[index].id
     fetch(`http://localhost:5000/todos/${id}`, { method: 'DELETE' })
-      .then(res => res.json())
-      .then(updatedTodos => setTasks(updatedTodos))
+        .then(res => res.json())
+        .then(() => setTasks((now) => now.filter((task) => task.id !== id)))
     setCompleted((now) => [...now, tasks[index]])
   }
 
   function ConfirmRename() {
     const id = tasks[editIndex].id
-    fetch(`http://localhost:5000/todos/${id}`, {method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: rename })})
-      .then(res => res.json())
-      .then(updatedTodos => setTasks(updatedTodos))
+    fetch(`http://localhost:5000/todos/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: rename })
+    })
+    .then(res => res.json())
+    .then(updatedTodo => setTasks((now) => now.map((task) => task.id === updatedTodo.id ? updatedTodo : task)))
     setEditIndex(null)
   }
 
